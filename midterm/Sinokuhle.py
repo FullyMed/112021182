@@ -35,7 +35,7 @@ def save_expenses(expenses):
     csv_file_name = 'expenses.csv'
     with open(csv_file_name, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["Date", "Category", "Amount"])  # Write header row
+        writer.writerow(["Date", "Category", "Amount"])  
         for expense in expenses:
             writer.writerow([expense.date.strftime("%Y-%m-%d"), expense.category, expense.amount])
 
