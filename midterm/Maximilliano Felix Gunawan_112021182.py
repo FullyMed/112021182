@@ -1,25 +1,36 @@
+from datetime import datetime
+import matplotlib.pyplot as plt
+
 class Money_Management:
     def __init__(self, max_outcome):
         self.outcome = []
         self.max_outcome = max_outcome
+        self.timestamps = []
 
     def add_outcome(self, total_outcome):
         if total_outcome > self.max_outcome:
             print("Expenses exceed maximum limit!")
         else:
             self.outcome.append(total_outcome)
-            print("Expense added successfully.")
+            now = datetime.now()
+            timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+            self.timestamps.append(timestamp)
+            print(f"Expense added successfully on {timestamp}: {total_outcome}")
 
     def remove_outcome(self, index):
         if 0 <= index < len(self.outcome):
             removed_outcome = self.outcome.pop(index)
-            print(f"Expense {removed_outcome} removed successfully.")
+            removed_timestamp = self.timestamps.pop(index)
+            print(f"Expense {removed_outcome} at {removed_timestamp} removed successfully.")
         else:
             print("Invalid index.")
 
     def edit_outcome(self, index, new_amount):
         if 0 <= index < len(self.outcome):
             self.outcome[index] = new_amount
+            now = datetime.now()
+            new_timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+            self.timestamps[index] = new_timestamp
             print("Expense edited successfully.")
         else:
             print("Invalid index.")
@@ -29,6 +40,16 @@ class Money_Management:
             return 0
         avg = sum(self.outcome) / len(self.outcome)
         return avg
+
+    def plot_expenses_over_time(self):
+        timestamps = [datetime.strptime(ts, "%Y-%m-%d %H:%M:%S") for ts in self.timestamps]
+        plt.plot(timestamps, self.outcome, marker='o')
+        plt.title('Expenses Over Time')
+        plt.xlabel('Time')
+        plt.ylabel('Expense Amount')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
 
 def main():
     maximum_expense_limit = float(input("Enter the maximum spending limit per month : "))
@@ -40,9 +61,10 @@ def main():
         print("2. Remove Expense")
         print("3. Edit Expense")
         print("4. Calculate Average Expenditures")
-        print("5. Finish")
+        print("5. Plot Expenses Over Time")
+        print("6. Finish")
 
-        choice = input("Choose (1/2/3/4/5): ")
+        choice = input("Choose (1/2/3/4/5/6): ")
 
         if choice == "1":
             total_outcome = float(input("Enter the expenditure amount : "))
@@ -58,6 +80,8 @@ def main():
             avg = money_manager.calculate_avg()
             print(f"Average monthly expenses : {avg}")
         elif choice == "5":
+            money_manager.plot_expenses_over_time()
+        elif choice == "6":
             print("Program finished.")
             break
         else:
