@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 1em;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5em;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.5em;
+        }
+        .form-group button {
+            padding: 0.5em 1em;
+        }
+        .income-list, .expense-list {
+            margin-top: 1em;
+        }
+        .list-item {
+            margin-bottom: 0.5em;
+        }
+        .result {
+            margin-top: 1em;
+            font-weight: bold;
+        }
+        .edit-input {
+            width: auto;
+            display: inline-block;
+        }
+        .edit-button, .delete-button {
+            margin-left: 1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Money Management System</h1>
+        
+        <div class="form-group">
+            <label for="maxExpense">Maximum Expense</label>
+            <input type="number" id="maxExpense" step="0.01">
+        </div>
+        
+        <div class="form-group">
+            <label for="incomeAmount">Income Amount</label>
+            <input type="number" id="incomeAmount" step="0.01">
+            <button onclick="addIncome()">Add Income</button>
+        </div>
+        
+        <div class="form-group">
+            <label for="expenseAmount">Expense Amount</label>
+            <input type="number" id="expenseAmount" step="0.01">
+            <label for="expenseCategory">Expense Category</label>
+            <input type="text" id="expenseCategory">
+            <button onclick="addExpense()">Add Expense</button>
+        </div>
+        
+        <div class="income-list" id="incomeList">
+            <h2>Incomes</h2>
+        </div>
+        
+        <div class="expense-list" id="expenseList">
+            <h2>Expenses</h2>
+        </div>
+        
+        <div class="result" id="totalIncomeResult"></div>
+        <div class="result" id="totalExpenseResult"></div>
+        <div class="result" id="totalMoneyResult"></div>
+    </div>
+
+    <script>
+        let maxExpense = 0;
+        let incomes = JSON.parse(localStorage.getItem('incomes')) || [];
+        let expenses = JSON.parse(localStorage.getItem('expenses')) || {};
+
+        function addIncome() {
+            const incomeAmount = parseFloat(document.getElementById('incomeAmount').value);
+            if (isNaN(incomeAmount) || incomeAmount <= 0) {
+                alert('Please enter a valid income amount.');
+                return;
+            }
+            const timestamp = new Date().toISOString();
+            incomes.push({ amount: incomeAmount, timestamp });
+            localStorage.setItem('incomes', JSON.stringify(incomes));
+            updateIncomeList();
+            calculateTotals();
+        }
+
+        function addExpense() {
+            const expenseAmount = parseFloat(document.getElementById('expenseAmount').value);
+            const category = document.getElementById('expenseCategory').value;
+            if (isNaN(expenseAmount) || expenseAmount <= 0 || !category) {
+                alert('Please enter a valid expense amount and category.');
+                return;
+            }
+            if (expenseAmount > maxExpense) {
+                alert('Expenses exceed maximum limit !');
+                return;
+            }
+            const timestamp = new Date().toISOString();
+            if (!expenses[category]) {
+                expenses[category] = [];
+            }
+            expenses[category].push({ amount: expenseAmount, timestamp });
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+            updateExpenseList();
+            calculateTotals();
+        }
+
+        function createListItem(content, editFunction, deleteFunction) {
+            const listItem = document.createElement('div');
+            listItem.className = 'list-item';
+            listItem.innerHTML = content;
+            
+            const editButton = document.createElement('button');
+            editButton.className = 'edit-button';
+            editButton.textContent = 'Edit';
+            editButton.addEventListener('click', editFunction);
+            
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-button';
+            deleteButton.textContent = 'Delete';
+            deleteButton.addEventListener('click', deleteFunction);
+            
+            listItem.appendChild(editButton);
+            listItem.appendChild(deleteButton);
+            
+            return listItem;
+        }
+
+        function updateIncomeList() {
+            const incomeList = document.getElementById('incomeList');
+            incomeList.innerHTML = '<h2>Incomes</h2>';
+            incomes.forEach((income, index) => {
+                const listItem = createListItem(
+                    `Amount : $${income.amount.toFixed(2)}, Date : ${new Date(income.timestamp).toLocaleString()}`,
+                    () => editIncome(index),
+                    () => deleteIncome(index)
+                );
+                incomeList.appendChild(listItem);
+            });
+        }
+
+        function updateExpenseList() {
+            const expenseList = document.getElementById('expenseList');
+            expenseList.innerHTML = '<h2>Expenses</h2>';
+            for (const [category, expensesArr] of Object.entries(expenses)) {
+                const categoryHeader = document.createElement('div');
+                categoryHeader.className = 'list-item';
+                categoryHeader.innerHTML = `<strong>${category}</strong>`;
+                expenseList.appendChild(categoryHeader);
+                expensesArr.forEach((expense, index) => {
+                    const listItem = createListItem(
+                        `Amount : $${expense.amount.toFixed(2)}, Date : ${new Date(expense.timestamp).toLocaleString()}`,
+                        () => editExpense(category, index),
+                        () => deleteExpense(category, index)
+                    );
+                    expenseList.appendChild(listItem);
+                });
+            }
+        }
+
+        function editIncome(index) {
+            const newAmount = parseFloat(prompt('Enter new income amount :', incomes[index].amount));
+            if (isNaN(newAmount) || newAmount <= 0) {
+                alert('Please enter a valid income amount.');
+                return;
+            }
+            incomes[index].amount = newAmount;
+            localStorage.setItem('incomes', JSON.stringify(incomes));
+            updateIncomeList();
+            calculateTotals();
+        }
+
+        function deleteIncome(index) {
+            incomes.splice(index, 1);
+            localStorage.setItem('incomes', JSON.stringify(incomes));
+            updateIncomeList();
+            calculateTotals();
+        }
+
+        function editExpense(category, index) {
+            const newAmount = parseFloat(prompt('Enter new expense amount :', expenses[category][index].amount));
+            if (isNaN(newAmount) || newAmount <= 0) {
+                alert('Please enter a valid expense amount.');
+                return;
+            }
+            if (newAmount > maxExpense) {
+                alert('Expenses exceed maximum limit !');
+                return;
+            }
+            expenses[category][index].amount = newAmount;
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+            updateExpenseList();
+            calculateTotals();
+        }
+
+        function deleteExpense(category, index) {
+            expenses[category].splice(index, 1);
+            if (expenses[category].length === 0) {
+                delete expenses[category];
+            }
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+            updateExpenseList();
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            const totalIncome = incomes.reduce((total, income) => total + income.amount, 0);
+            const totalExpense = Object.values(expenses).flat().reduce((total, expense) => total + expense.amount, 0);
+            const totalMoney = totalIncome - totalExpense;
+
+            document.getElementById('totalIncomeResult').innerText = `Total Income : $${totalIncome.toFixed(2)}`;
+            document.getElementById('totalExpenseResult').innerText = `Total Expense : $${totalExpense.toFixed(2)}`;
+            document.getElementById('totalMoneyResult').innerText = `Total Money : $${totalMoney.toFixed(2)}`;
+        }
+
+        document.getElementById('maxExpense').addEventListener('change', (event) => {
+            maxExpense = parseFloat(event.target.value);
+        });
+
+        updateIncomeList();
+        updateExpenseList();
+        calculateTotals();
+    </script>
+</body>
+</html>
