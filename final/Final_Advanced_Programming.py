@@ -2,29 +2,28 @@ import re
 import csv
 import json
 import pandas as pd
-import mysql.connector
-from mysql.connector import Error
+import pymysql
 from dataclasses import dataclass
 from typing import List, Dict
 from datetime import datetime
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 
+
 class MySQLDatabase:
     def __init__(self, host: str, user: str, password: str, database: str):
         self.conn = None
         try:
-            self.conn = mysql.connector.connect(
+            self.conn = pymysql.connect(
                 host=host,
                 user=user,
                 password=password,
                 database=database
             )
-            if self.conn.is_connected():
-                print('Connected to MySQL database')
-        except Error as e:
+            print('Connected to MySQL database')
+        except pymysql.MySQLError as e:
             print(f"Error: {e}")
-            messagebox.showerror("Database Connection Error", f"Failed to connect to MySQL : {e}")
+            messagebox.showerror("Database Connection Error", f"Failed to connect to MySQL: {e}")
             self.conn = None
 
     def create_tables(self):
@@ -87,17 +86,20 @@ class MySQLDatabase:
         return result
 
     def close(self):
-        if self.conn and self.conn.is_connected():
+        if self.conn:
             self.conn.close()
+
 
 @dataclass
 class Transaction:
     amount: float
     timestamp: datetime
 
+
 @dataclass
 class Expense(Transaction):
     category: str
+
 
 @dataclass
 class MoneyData:
@@ -122,7 +124,7 @@ class MoneyData:
 
     def add_expense(self, expense_amount: float, category: str) -> str:
         if expense_amount > self.max_expense:
-            return "Expenses exceed maximum limit !"
+            return "Expenses exceed maximum limit!"
         else:
             timestamp = datetime.now()
             new_expense = pd.DataFrame([[expense_amount, timestamp, category]], columns=["amount", "timestamp", "category"])
@@ -226,7 +228,7 @@ class MoneyApp:
         self.root = root
         self.root.title("Money Management System")
 
-        max_expense = simpledialog.askfloat("Maximum Expense", "Enter the maximum spending limit per month :")
+        max_expense = simpledialog.askfloat("Maximum Expense", "Enter the maximum spending limit per month:")
         if max_expense is None:
             messagebox.showwarning("Error", "Maximum expense is required.")
             self.root.destroy()
@@ -234,8 +236,8 @@ class MoneyApp:
 
         self.db = MySQLDatabase(
             host="localhost",
-            user="yourusername",
-            password="yourpassword",
+            user="maxfelix",
+            password="Pel1kmysql*",
             database="money_management"
         )
 
